@@ -2,8 +2,14 @@ import csv
 import re
 import datetime
 from typing import List
+from openpyxl import Workbook
+from openpyxl.styles import Font, Side, Border
+from openpyxl.utils import get_column_letter
+from openpyxl.styles.numbers import FORMAT_PERCENTAGE_00
+
 from jinja2 import Environment, FileSystemLoader
 import pdfkit
+
 
 currency_to_rub = {"AZN": 35.68,
                    "BYR": 23.91,
@@ -55,14 +61,14 @@ class Salary:
 
 
 class Report:
-    def __init__(self, years_salary, years_vacans_count, years_vacans_salary, vacancies_by_years, city_salary,
-                 vacans_by_cities):
+    def __init__(self, years_salary, years_vacs_count, prof_years_salary, prof_years_vacs_count, city_salary,
+                 city_vacs_rate):
         self.years_salary = years_salary
-        self.years_vacans_count = years_vacans_count
-        self.years_vacans_salary = years_vacans_salary
-        self.vacancies_by_years = vacancies_by_years
+        self.years_vacs_count = years_vacs_count
+        self.prof_years_salary = prof_years_salary
+        self.prof_years_vacs_count = prof_years_vacs_count
         self.city_salary = city_salary
-        self.vacans_by_cities = vacans_by_cities
+        self.city_vacs_rate = city_vacs_rate
 
     def generate_pdf(self):
         headers1 = ["Год", "Средняя зарплата", f"Средняя зарплата - " + vacancy, "Количество вакансий",
@@ -76,11 +82,11 @@ class Report:
                                         "headers1": headers1,
                                         "headers2": headers2,
                                         "salary_by_years": years_salary,
-                                        "vacancies_by_years": vacancies_by_years,
-                                        "vacancies_salary_by_years": years_vacans_salary,
-                                        "vacancies_counts_by_years": years_vacans_count,
-                                        "city_salary": city_salary,
-                                        "vacans_by_cities": vacans_by_cities
+                                        "vacancies_by_years": prof_years_vacs_count,
+                                        "vacancies_salary_by_years": prof_years_salary,
+                                        "vacancies_counts_by_years": years_vacs_count,
+                                        "salary_by_cities": city_salary,
+                                        "vacs_by_cities": city_vacs_rate
                                         })
 
         config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
@@ -150,17 +156,17 @@ for vacans in data.vacancies:
 needed_vacs = list(filter(lambda x: int(len(data.vacancies) * 0.01) <= new_dict[x.area_name], data.vacancies))
 years_salary = get_statistic(get_salary_statistic(data.vacancies, 'published_at').items(), 0,
                              'Динамика уровня зарплат по годам: ')
-years_vacans_count = get_statistic(get_vacancies_statistic(data.vacancies, 'published_at').items(), 0,
+years_vacs_count = get_statistic(get_vacancies_statistic(data.vacancies, 'published_at').items(), 0,
                                  'Динамика количества вакансий по годам: ')
-years_vacans_salary = get_statistic(get_salary_statistic(data.vacancies, 'published_at', vacancy).items(), 0,
+prof_years_salary = get_statistic(get_salary_statistic(data.vacancies, 'published_at', vacancy).items(), 0,
                                   'Динамика уровня зарплат по годам для выбранной профессии: ')
-vacancies_by_years = get_statistic(get_vacancies_statistic(data.vacancies, 'published_at', vacancy).items(), 0,
+prof_years_vacs_count = get_statistic(get_vacancies_statistic(data.vacancies, 'published_at', vacancy).items(), 0,
                                       'Динамика количества вакансий по годам для выбранной профессии: ')
 city_salary = get_statistic(get_salary_statistic(needed_vacs, 'area_name').items(), 1,
                             'Уровень зарплат по городам (в порядке убывания): ', 10, True)
-vacans_by_cities = get_statistic(get_vacancies_statistic(needed_vacs, 'area_name').items(), 1,
+city_vacs_rate = get_statistic(get_vacancies_statistic(needed_vacs, 'area_name').items(), 1,
                                'Доля вакансий по городам (в порядке убывания): ', 10, True)
 
 
-Report(years_salary, years_vacans_count, years_vacans_salary, vacancies_by_years, city_salary,
-       vacans_by_cities).generate_pdf()
+Report(years_salary, years_vacs_count, prof_years_salary, prof_years_vacs_count, city_salary,
+       city_vacs_rate).generate_pdf()
