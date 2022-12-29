@@ -35,7 +35,7 @@
 </head>
 <body>
     <h1>Аналитика по зарплатам и городам для профессии {{profession}}</h1>
-    <img src="C:\Users\Арина\PycharmProjects\ArinaShubina\graph.png">
+    <img src="C:\Users\Арина\PycharmProjects\ShubinaArinaGit\graph.png">
     <h2>Статистика по годам</h2>
     <table>
         <tr>
@@ -43,13 +43,13 @@
             <th>{{header}}</th>
             {% endfor %}
         </tr>
-        {% for year, value in salary_by_years.items() %}
+        {% for year, value in years_salary.items() %}
             <tr>
                 <td>{{year}}</td>
                 <td>{{value}}</td>
-                <td>{{vacancies_salary_by_years[year]}}</td>
+                <td>{{years_vacans_salary[year]}}</td>
                 <td>{{vacancies_by_years[year]}}</td>
-                <td>{{vacancies_counts_by_years[year]}}</td>
+                <td>{{years_vacans_count[year]}}</td>
             </tr>
         {% endfor %}
     </table>
@@ -59,7 +59,7 @@
             <th>{{headers2[0]}}</th>
             <th>{{headers2[1]}}</th>
         </tr>
-        {% for city, count in salary_by_cities.items() %}
+        {% for city, count in city_salary.items() %}
             <tr>
                 <td>{{city}}</td>
                 <td>{{count}}</td>
@@ -71,7 +71,7 @@
             <th>{{headers2[2]}}</th>
             <th>{{headers2[3]}}</th>
         </tr>
-        {% for city, count in vacs_by_cities.items() %}
+        {% for city, count in vacans_by_cities.items() %}
             <tr>
                 <td>{{city}}</td>
                 <td>{{[(count*100)|round(2)|string|replace(".",","),"%"]|join}}</td>

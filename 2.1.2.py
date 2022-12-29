@@ -5,6 +5,7 @@ from typing import List
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 
+"""Cоварь для перевода зарплаты в рубли"""
 currency_to_rub = {"AZN": 35.68,
                    "BYR": 23.91,
                    "EUR": 59.90,
@@ -17,15 +18,25 @@ currency_to_rub = {"AZN": 35.68,
                    "UZS": 0.0055}
 
 class DataSet:
+    """Класс для представления файла
+
+    Attributes:
+        file_name (str): Имя входящего файла
+        name (list): Список заголовков
+        vacancies (list): Список строк с вакансиями
+    """
     def __init__(self, file_name):
+        """Инициализирует объекты DataSet"""
         self.file_name = file_name
         self.vacancies = [Vacancy(vac) for vac in self.csv_filer(*self.csv_reader(file_name))]
 
     def delete_html(self, n_html):
+        """Удаляет html-теги из файла"""
         result = re.compile(r'<[^>]+>').sub('', n_html)
         return result if '\n' in n_html else " ".join(result.split())
 
     def csv_reader(self, file_name):
+        """Открывает, считывает и разделяет файл на заголовки и информацию о вакансиях"""
         file_csv = open(file_name, encoding='utf_8_sig')
         vacanc_reader_name = file_csv.readline().rstrip().split(",")
         reader_csv = csv.reader(file_csv)
@@ -34,30 +45,60 @@ class DataSet:
         return vacanc_reader_name, vacanc_reader_corr
 
     def csv_filer(self, name, vacancies):
+        """Создает словарь с вокансиями используя метод delete_html"""
         vacancies_list = list(filter(lambda vac: (len(vac) == len(name) and vac.count('') == 0), vacancies))
         vacanies_dict = [dict(zip(name, map(self.delete_html, vac))) for vac in vacancies_list]
         return vacanies_dict
 
 class Vacancy:
+    """Класс для представления вакансии.
+    Attributes:
+        name (str): Название вакансии
+        salary (Salary): Вся информация о зарплате
+        area_name (str): Название региона
+        published_at (datetime): Дата публикации вакансии
+    """
     def __init__(self, dictionary):
+        """Инициализирует объекты Vacancy"""
         self.name = dictionary['name']
         self.salary = Salary(dictionary['salary_from'], dictionary['salary_to'], dictionary['salary_currency'])
         self.area_name = dictionary['area_name']
         self.published_at = dictionary['published_at']
 
 class Salary:
+    """
+    Класс для представления зарплаты.
+      Attributes:
+          salary_from (str): Нижняя граница оклада
+          salary_to (str): Верхняя граница оклада
+          salary_currency (str): Валюта оклада
+      """
     def __init__(self, salary_from, salary_to, salary_currency):
+        """Инициализирует объекты Salary"""
         self.salary_from = salary_from
         self.salary_to = salary_to
         self.salary_currency = salary_currency
 
     def to_rub(self, new_salary: float) -> float:
+        """Производит перевод зарплат в рубли"""
         return new_salary * currency_to_rub[self.salary_currency]
 
 
 class Report:
+    """
+    Класс для представления отчета.
+        Attributes:
+            years_salary (dict): Динамика уровня зарплат по годам
+            years_vacs_count (dict):Динамика количества вакансий по годам
+            prof_years_salary (dict): Динамика уровня зарплат по годам для выбранной профессии
+            prof_years_vacs_count (dict): Динамика количества вакансий по годам для выбранной профессии
+            city_salary (dict): Уровень зарплат по городам
+            city_vacs_rate (dict): Доля вакансий по городам
+
+     """
     def __init__(self, years_salary, years_vacs_count, prof_years_salary, prof_years_vacs_count, city_salary,
                  city_vacs_rate):
+        """Инициализирует объекты Report"""
         self.years_salary = years_salary
         self.years_vacs_count = years_vacs_count
         self.prof_years_salary = prof_years_salary
@@ -66,6 +107,7 @@ class Report:
         self.city_vacs_rate = city_vacs_rate
 
     def create_regular_schedule(self, ax: Axes, keys1, keys2, values1, values2, label1, label2, title):
+        """Cоздает двух вертикальных графиков"""
         x1 = [key - 0.2 for key in keys1]
         x2 = [key + 0.2 for key in keys2]
         ax.bar(x1, values1, width=0.4, label=label1)
@@ -76,6 +118,7 @@ class Report:
         ax.tick_params(axis="x", labelrotation=90)
 
     def create_pie_schedule(self, ax: Axes, title):
+        """Создание круговой диаграммы"""
         new_dict = self.city_vacs_rate
         new_dict["Другие"] = 1 - sum([value for value in new_dict.values()])
         ax.pie(x=list(new_dict.values()), labels=list(new_dict.keys()))
@@ -85,6 +128,7 @@ class Report:
         ax.set_title(title, fontsize=16)
 
     def create_horizontal_schedule(self, ax: Axes, keys, values, title):
+        """Создание горизонтального графика"""
         keys = [key.replace(" ", "\n").replace("-", "-\n") for key in list(keys)]
         ax.barh(keys, values)
         ax.set_yticks(keys)
@@ -95,6 +139,7 @@ class Report:
         ax.tick_params(axis='y', labelsize=6)
 
     def generate_schedule(self):
+        """Объединение всех графиков в один png файл"""
         fig, axis = plt.subplots(2, 2)
         plt.rcParams['font.size'] = 8
         self.create_regular_schedule(axis[0, 0], self.years_salary.keys(), self.prof_years_salary.keys(),
@@ -116,16 +161,23 @@ class Report:
 
 
 def get_data(date):
+    """Из даты берет только год"""
     new_date = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S%z')
     return int(new_date.strftime('%Y'))
 
 def get_statistic(result, index, n_message, slice=0, reverse=False):
+    """Производит фильтрацию колонок по убыванию"""
     slice = len(result) if slice == 0 else slice
     statistic = dict(sorted(result, key=lambda item: item[index], reverse=reverse)[:slice])
     print(f'{n_message}{str(statistic)}')
     return statistic
 
 def get_vacancies_statistic(vacs_list: List[Vacancy], fields, vac_name: str = ''):
+    """
+    Cоздает статистику по вакансиям
+        Return:
+            statistic_result (dict): Статистика по вакансиям для выбранной профессии
+    """
     statistic_result = {}
     for vac in vacs_list:
         if vac.__getattribute__(fields) not in statistic_result.keys():
@@ -143,6 +195,11 @@ def get_vacancies_statistic(vacs_list: List[Vacancy], fields, vac_name: str = ''
     return statistic_result
 
 def get_salary_statistic(vacs_list: List[Vacancy], fields, vac_name: str = ''):
+    """
+    Cоздает статистику по зарплате
+        Return:
+            statistic_result (dict): Статистика по зарплате для выбранной профессии
+    """
     statistic_result = {}
     for vac in vacs_list:
         if vac.__getattribute__(fields) not in statistic_result.keys():
@@ -188,6 +245,5 @@ city_salary = get_statistic(get_salary_statistic(needed_vacs, 'area_name').items
 city_vacs_rate = get_statistic(get_vacancies_statistic(needed_vacs, 'area_name').items(), 1,
                                'Доля вакансий по городам (в порядке убывания): ', 10, True)
 
-report = Report(years_salary, years_vacs_count, prof_years_salary, prof_years_vacs_count, city_salary,
-       city_vacs_rate)
-report.generate_schedule()
+Report(years_salary, years_vacs_count, prof_years_salary, prof_years_vacs_count, city_salary,
+       city_vacs_rate).generate_schedule()
