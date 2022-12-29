@@ -1,10 +1,20 @@
 import csv
 class Separation:
+    """
+    Класс разделения файла на csv-файлы
+
+        Attributes:
+            file_name (str): Имя входящего файла
+            name (list): Список заголовков
+            years (set): Список лет
+        """
     def __init__(self):
+        """Создание объектов в классе Separation"""
         self.file_name = input("Введите название файла: ")
         self.years = set()
 
     def sepCsv(self):
+        """Открывает, считывает входной файл и разделяет его на несколько csv-файлов по годам"""
         with open(self.file_name, encoding='utf-8') as file:
             reader_csv = csv.reader(file)
             self.name = next(reader_csv)
